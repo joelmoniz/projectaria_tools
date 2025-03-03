@@ -87,6 +87,8 @@ parser.add_argument("--output-dir", help="Output directory", required=True)
 
 parser.add_argument("--unzip", help="Unzip the downloaded zip files. ", required=True)
 
+parser.add_argument("--script_mode", help="Run in shell script; provide chunk numbers directly and no tqdm updates.", default=False, action='store_true')
+
 
 def load_meta_data(cdn_file: str):
     # Load the metadata file downloaded from the ASE website.
@@ -96,7 +98,7 @@ def load_meta_data(cdn_file: str):
 
 
 def main(
-    cdn_file: str, output_dir: str, scene_ids: list, set_type: str, unzip_flag: bool
+    cdn_file: str, output_dir: str, scene_ids: list, set_type: str, unzip_flag: bool, script_mode: bool
 ):
     # Load the metadata file downloaded from the ASE website.
     metadata = load_meta_data(cdn_file)
@@ -106,7 +108,7 @@ def main(
         print(f"Creating local output folder {output_dir}")
         os.makedirs(output_dir)
 
-    chunk_ids_to_download = list(set([x // SCENES_PER_CHUNK for x in scene_ids]))
+    chunk_ids_to_download = list(set([x // SCENES_PER_CHUNK for x in scene_ids])) if not script_mode else scene_ids
     chunk_ids_to_download.sort()
     for i, chunk_id in enumerate(chunk_ids_to_download):
         chunk_filename = "{}_chunk_{}.zip".format(set_type, f"{chunk_id:07}")
@@ -128,7 +130,7 @@ def main(
             urllib.request.urlretrieve(
                 download_url,
                 download_local_filename,
-                reporthook=urllib_tqdm_hook(t),
+                reporthook=urllib_tqdm_hook(t) if not script_mode else None,
                 data=None,
             )
             with open(str(download_local_filename), "rb") as f:
@@ -142,6 +144,13 @@ def main(
                     zip_ref.extractall(output_dir)
                 os.remove(download_local_filename)
 
+            if script_mode:
+                print(
+                    "Chunk {} successfully downloaded.".format(
+                        chunk_id
+                    )
+                )
+
 
 if __name__ == "__main__":
     args = parser.parse_args()
@@ -151,4 +160,5 @@ if __name__ == "__main__":
         scene_ids=args.scene_ids,
         set_type=args.set,
         unzip_flag=args.unzip,
+        script_mode=args.script_mode,
     )
