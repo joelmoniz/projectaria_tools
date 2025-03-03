@@ -125,7 +125,7 @@ def main(
         download_sha = chunk_details["sha"]
         download_local_filename = os.path.join(output_dir, chunk_filename)
         with tqdm(
-            unit="B", unit_scale=True, leave=True, miniters=1, desc="Progress"
+            unit="B", unit_scale=True, leave=True, miniters=1, desc="Progress", disable=script_mode
         ) as t:  # all optional kwargs
             urllib.request.urlretrieve(
                 download_url,
